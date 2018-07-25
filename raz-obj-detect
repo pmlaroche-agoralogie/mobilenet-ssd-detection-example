@@ -1,0 +1,30 @@
+rm -rf /home/workspace/models/research/object_detection/*
+cp -r /home/ftptensor/object-reco/* /home/workspace/models/research/object_detection/
+cp -r /home/ftptensor/copie-git/* /home/workspace/models/research/object_detection/
+mkdir /home/workspace/models/research/object_detection/images
+mkdir /home/workspace/models/research/object_detection/images/train
+mkdir /home/workspace/models/research/object_detection/images/test
+cp /home/ftptensor/training/* /home/workspace/models/research/object_detection/images
+mkdir /tmp/imagetmp
+rm  -r /tmp/imagetmp/*
+cp /home/ftptensor/training/* /tmp/imagetmp/
+mv /tmp/imagetmp/*A* /home/workspace/models/research/object_detection/images/train
+mv /tmp/imagetmp/*3* /home/workspace/models/research/object_detection/images/test
+cp /root/test-reco.py  /home/workspace/models/research/object_detection/
+
+PYTHONPATH="/home/workspace/models/research:/home/workspace/models/research/object_detection:/home/workspace/models/research/slim:/usr/lib/python3/dist-packages:/usr/local/lib/python3.6/dist-packages"
+export PYTHONPATH
+
+PATH=$PATH:/home/protocolebuf/bin
+export PATH
+
+cd /home/workspace/models/research/
+	
+protoc object_detection/protos/*.proto --python_out=.
+
+cd /home/workspace/models/research/object_detection
+python3 xml_to_csv.py
+python3 generate_tfrecord.py --csv_input=data/train_labels.csv --output_path=data/train.record
+python3 generate_tfrecord.py --csv_input=data/test_labels.csv --output_path=data/test.record
+
+python3 train.py --logtostderr --train_dir=training/ --pipeline_config_path=training/ssd_mobilenet_v1_custom.config
